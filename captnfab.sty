@@ -1,0 +1,427 @@
+\ProvidesPackage{captnfab}[2013/13/09 Captnfab]
+
+% Titlepage Option
+\newif\if@captitlepage
+\@captitlepagefalse
+\DeclareOption{titlepage}{\@captitlepagetrue}
+
+% Theorems Option
+\newif\if@capthms
+\@capthmsfalse
+\DeclareOption{theorems}{\@capthmstrue}
+
+% Headers Option
+\newif\if@caphead
+\@capheadfalse
+\DeclareOption{headers}{\@capheadtrue}
+\ProcessOptions
+
+% NoStyle Option
+\newif\if@capstyle
+\@capstyletrue
+\DeclareOption{nostyle}{\@capstylefalse}
+
+\ProcessOptions
+
+% Dependencies
+\RequirePackage{xcolor}
+\if@capstyle
+  \RequirePackage[explicit]{titlesec}
+  \RequirePackage{fontspec}
+  \RequirePackage{tikz}
+  \usetikzlibrary{calc}
+\fi
+\if@capthms
+  \RequirePackage{environ}
+  \RequirePackage{pgfkeys}
+  \RequirePackage{tikz}
+  \usetikzlibrary{calc}
+\fi
+\if@caphead
+  \RequirePackage{fancyhdr}
+\fi
+\if@captitlepage
+  \RequirePackage{timestamp}
+  \RequirePackage{graphicx}
+  \RequirePackage{tikz}
+  \RequirePackage{setspace}
+  \usetikzlibrary{calc}
+\fi
+
+\if@capstyle
+  \newfontfamily\subcfont{Sketchetica Light}%Vademecum}
+\fi
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Colors
+\definecolor{sectionbackground}{rgb}{0.95,0.95,0.95}
+\definecolor{chapterborders}{rgb}{0.8,0.8,0.8}
+\definecolor{chapterbackground}{rgb}{0.95,0.95,0.95}
+\definecolor{chapterbackgroundC}{rgb}{1,1,1}
+\definecolor{chapterbackgroundN}{rgb}{1,1,1}
+\definecolor{chapterforeground}{rgb}{0,0,0}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\makeatletter
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Chapters / Sections / Subsections
+\if@capstyle
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Chapters
+\titleformat{\chapter}
+{%
+  \gdef\chapterlabel{}
+  \normalfont\sffamily\Huge\bfseries\scshape%
+}
+{%
+  \gdef\chapterlabel{\thechapter}
+}
+{%
+0pt
+}
+{%
+  \begin{tikzpicture}\coordinate (chaptop);\end{tikzpicture}
+  \begin{tikzpicture}[remember picture, overlay]
+    \coordinate (orig) at (current page.north west);
+    \coordinate[yshift=-3.2cm] (rect) at (orig);
+    \draw[draw=chapterborders,fill=chapterbackgroundN] (rect) -- +(\paperwidth,0);
+    \ifttl@label
+      \coordinate[xshift=4.5cm,yshift=-3.5cm] (chaptitlepos) at (orig);
+    \else
+      \coordinate[xshift=2cm,yshift=-3.5cm] (chaptitlepos) at (orig);
+    \fi
+    \node[anchor=north west] (chaptitle) at (chaptitlepos) {%
+        \begin{minipage}{1\textwidth}%
+          \color{chapterforeground}\noindent#1%
+        \end{minipage}
+      };
+    \node[anchor=north west] (chapsubt) at (chaptitle.south west) {\@ifundefined{chsubt}{}{%
+        \begin{minipage}{1\textwidth}%
+          \color{chapterforeground}\normalfont\sffamily\large\chsubt%
+        \end{minipage}%
+      }};
+    \coordinate let \p1=(orig), \p2=(chapsubt.south) in coordinate (rect2) at (\x1,\y2);
+    \draw[draw=chapterborders,fill=chapterbackgroundN] (rect2) -- +(\paperwidth,0);
+    \ifttl@label
+      \node[anchor=east, rectangle, inner sep=0.5cm, fill=chapterbackground, draw=chapterborders] (chapnum) at ([xshift=4cm]$(rect.west)!0.5!(rect2.west)$) {\color{chapterforeground}\scalebox{5}{\subcfont\thechapter}};
+    \fi
+   \end{tikzpicture}
+}
+\titlespacing*{\chapter}{0pt}{60pt}{30pt}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Sections
+\titleformat{\section}[block]
+{%
+  \Large\sffamily\bfseries%
+}
+{%
+}
+{%
+0pt
+}
+{%
+  \begin{tikzpicture}[remember picture, overlay]
+  \ifttl@label
+    \node[anchor=west,xshift=1.5cm,rectangle,rounded corners=15pt,inner sep=5pt,] (sectitle) {\color{chapterforeground}\begin{minipage}{\textwidth}#1\end{minipage}};
+  \else
+    \node[anchor=west,xshift=0.5cm,rectangle,rounded corners=15pt,inner sep=5pt,] (sectitle) {\color{chapterforeground}\begin{minipage}{\textwidth}#1\end{minipage}};
+  \fi
+  \draw[anchor=west,draw=chapterborders] let \p1=(sectitle.north) in (0,\y1) -- (\linewidth,\y1);
+  \draw[anchor=west,draw=chapterborders] let \p1=(sectitle.south) in (0,\y1) -- (\linewidth,\y1);
+  \ifttl@label
+    \node[anchor=west,xshift=-0.5cm,rectangle,inner sep=10pt,fill=sectionbackground,draw=chapterborders] {\color{chapterforeground}\thesection};
+  \fi
+  \end{tikzpicture}
+}
+
+%
+\titlespacing*{\section}{0pt}{20pt}{25pt}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% SubSections
+\titleformat{\subsection}[block]
+{%
+  \large\sffamily\bfseries%
+}
+{%
+}
+{%
+0pt
+}
+{%
+  \begin{tikzpicture}[remember picture, overlay]
+\ifttl@label
+    \node[anchor=west,xshift=1.5cm] (subsectitle) {\color{chapterforeground}#1};
+    \node[anchor=east] at (subsectitle.west) {\color{chapterforeground}\thesubsection};
+\else
+    \node[anchor=west,xshift=0.5cm] (subsectitle) {\color{chapterforeground}#1};
+\fi
+\draw[anchor=west,draw=chapterborders] let \p1=(subsectitle.south) in (0,\y1) -- (\linewidth,\y1);
+  \end{tikzpicture}
+}
+\titlespacing*{\subsection}{0pt}{15pt}{20pt}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\fi
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Environments
+\if@capthms
+\newcounter{defnumber}[section]
+\def\thedefnumber{\thesection.\arabic{defnumber}}
+\def\theHdefnumber{\thesection.\arabic{defnumber}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\pgfkeys{
+  /makebigenv/.is family, /makebigenv,
+  default/.style = 
+  {
+    bordercolor = chapterborders,
+    titlecolor = chapterbackground,
+    framecolor = chapterbackgroundC,
+    counter = defnumber,
+  },
+  bordercolor/.estore in = \@makebigenvBC,
+  titlecolor/.estore in = \@makebigenvTC,
+  framecolor/.estore in = \@makebigenvFC,
+  counter/.estore in = \@makebigenvC,
+}
+\newcommand{\makebigenv}[3][]{
+  \NewEnviron{#2}[2][]{%
+  \pgfkeys{/makebigenv,#1,default,#1}%
+    \refstepcounter{\@makebigenvC}%
+    \begin{center}%
+    \begin{tikzpicture}[remember picture]
+      \node[
+        above left,
+        anchor=west,
+        rectangle,
+        inner sep=10pt,
+        draw=\@makebigenvBC,
+        fill=\@makebigenvFC,
+          ] (box) {%
+            \begin{minipage}{.95\textwidth}
+            \vspace{0.25cm}
+            \ifx\\##2\\
+            {\em \BODY}
+            \else
+            {\bf ##2.}
+            {\em \BODY}
+            \fi
+            \end{minipage}%
+          };
+      \node[
+        above left,
+        anchor=west,
+        rectangle,
+        inner sep=5pt,
+        xshift=0.5cm,
+        draw=\@makebigenvBC,
+        fill=\@makebigenvTC,
+        ] at (box.north west) {%
+          {\bf #3 \csname the\@makebigenvC\endcsname}%
+        };
+      \ifx\\##1\\
+      \else
+        \node[
+          above left,
+          rectangle,
+          rounded corners,
+          inner sep=5pt,
+          xshift=-0.5cm,
+          yshift=-0.34cm,
+          draw=\@makebigenvBC,
+          fill=\@makebigenvTC,
+          ] at (box.north east) {{\bf ##1}};
+      \fi
+    \end{tikzpicture}%
+    \end{center}
+}
+}
+
+\newcommand{\makesmallenv}[3]{
+\NewEnviron{#1}[2][]{%
+  \refstepcounter{#3}%
+  \vspace{0.4cm}
+  \noindent{\color{chapterborders}\fbox{{\color{black}{\bf #2 \csname the#3\endcsname}}}}
+            {\bf #2 }%
+  \ifx\\##1\\
+  \else
+  {\bf (##1)}
+  \nopagebreak[4]%
+  \fi
+  \ifx\\##2\\
+  \else
+  {\bf ##2.}
+  \nopagebreak[4]%
+  \fi
+  \nopagebreak[4]%
+  {\em \BODY}
+  \vspace{0.4cm}
+}}
+
+\newcommand{\makeverysmallenv}[3]{
+\NewEnviron{rmq}[2][]{%
+  \refstepcounter{#3}%
+  \vspace{0.4cm}%
+  \noindent{\color{chapterborders}{\underline{{\color{black}{\bf #2 \csname the#3\endcsname}}}}}
+  \ifx\\##1\\%
+  \else%
+  {\bf (##1)}
+  \nopagebreak[4]%
+  \fi%
+  \ifx\\##2\\%
+  \else%
+  {\bf ##2.}
+  \nopagebreak[4]%
+  \fi%
+  \nopagebreak[4]%
+  \noindent%
+  {\em \BODY}
+  \vspace{0.4cm}
+}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Theorems
+\makebigenv{theoremre}{Théorème}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Propositions
+\makebigenv{propositionre}{Proposition}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Corollaries
+\makebigenv[titlecolor = chapterbackgroundC]{corollary}{Corollaire}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Lemmas
+\makebigenv[titlecolor = chapterbackgroundC]{lemmere}{Lemme}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Properties
+\makebigenv[titlecolor = chapterbackgroundC]{proprietere}{Propriété}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Conjectures
+\makebigenv{conj}{Conjecture}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Definitions
+\makesmallenv{definitionre}{Définition}{defnumber}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Remarks
+\makeverysmallenv{rmq}{Note}{defnumber}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\fi
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Decoration
+\if@caphead
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Headers
+\pagestyle{fancy}
+\renewcommand{\chaptermark}[1]{\markboth{#1}{}}
+\renewcommand{\sectionmark}[1]{\markright{\thesection\ #1}}
+\fancyhf{} % delete current setting for header and footer
+\fancyhead[LE,RO]{\bfseries\thepage}
+\fancyhead[LO]{\bfseries\rightmark}
+\fancyhead[RE]{\bfseries\leftmark}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\footrulewidth}{0pt}
+\addtolength{\headheight}{0.5pt} % make space for the rule
+\fancypagestyle{plain}{%
+\fancyhead{} % get rid of headers on plain pages
+\renewcommand{\headrulewidth}{0pt} % and the line
+}
+\fi
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Title Page
+\if@captitlepage
+
+\makeatletter
+\def\@title{\textless{}Titre de la thèse\textgreater}
+\def\@author{\textless{}Civilité Nom Prénom\textgreater}
+\def\@date{\textless{}JJ/MM/AAAA\textgreater}
+\def\@email{}
+  \newcommand{\email}[1]{\gdef\@email{#1}}
+\def\@university{\textless{}Université\textgreater}
+  \newcommand{\university}[1]{\gdef\@university{#1}}
+\def\@researchunit{\textless{}Unité de recherche\textgreater}
+  \newcommand{\researchunit}[1]{\gdef\@researchunit{#1}}
+\def\@specialisation{\textless{}Spécialité\textgreater}
+  \newcommand{\specialisation}[1]{\gdef\@specialisation{#1}}
+\def\@doctoral{\textless{}École doctorale\textgreater}
+  \newcommand{\doctoral}[1]{\gdef\@doctoral{#1}}
+\newcommand{\titletimestamp}{\gdef\@titletimestamp}
+\def\@myquote{\textless{}Une citation courte mais intéressante de votre thèse
+(ce n'est pas poi qui écrit les consignes hein, alors ne vous plaigniez pas.}
+  \newcommand{\myquote}[1]{\gdef\@myquote{#1}}
+\def\@univlogo{logo-um2.png}
+  \newcommand{\univlogo}[1]{\gdef\@univlogo{#1}}
+\def\@jury{}
+  \newcommand{\jury}[4]{\expandafter\def\expandafter\@jury\expandafter{\@jury{} #1 & #2 & #3 & #4 \\}}
+\def\@titlefootnote{}
+\newcommand{\titlefootnote}[1]{\gdef\@titlefootnote{#1}}
+
+\renewcommand{\maketitle}
+{
+  \begin{titlepage}
+
+  \onehalfspacing
+  \begin{tikzpicture}[remember picture, overlay]
+
+    % Include the logo
+
+    \coordinate (vcenter) at (current page.north) {};
+
+    \node[yshift=-6cm] at (vcenter) {{\large Délivré par l'{\sc\bf \@university}}};
+
+    \node[yshift=-8cm] at (vcenter) {{\large Préparée au sein de l'école doctorale {\sc\bf\@doctoral}}};
+    \node[yshift=-8.5cm] at (vcenter) {{\large Et de l'unité de recherche {\sc\bf\@researchunit}}};
+
+    \node[yshift=-9.5cm] at (vcenter) {{\large Spécialité: {\sc\bf\@specialisation}}};
+    \node[yshift=-11cm] at (vcenter) {{\large Présentée par {\bf\@author}}};
+    \node[yshift=-11.5cm] at (vcenter) {\tt\@email};
+    \ifx\@titletimestamp\undefined
+    \else
+      \node[yshift=-12cm] at (vcenter) {{\em Version mise à jour le \today{} à \xxivtime}};
+    \fi
+  \node[yshift=-15cm,draw=black, inner sep=20pt] at (vcenter) {\begin{minipage}{0.7\textwidth}\centering\LARGE\bfseries\noindent\@title\end{minipage}};
+    \node[yshift=-20cm,xshift=-2cm] at (vcenter) {\small Soutenue le \@date{} devant le jury composé de :};
+
+    \node[anchor=north,yshift=-20.5cm] at (vcenter) {{\small
+      \begin{tabular}{llll}
+        \@jury
+      \end{tabular}
+  }};
+
+  \node[yshift=-27cm,text width=0.8\textwidth,draw=black,inner sep=0.5em] at (vcenter) {{\em [\@myquote]}};
+  \node[yshift=-29cm,text width=0.8\textwidth] at (vcenter) {{\footnotesize\@titlefootnote}};
+
+  \end{tikzpicture}
+  \singlespacing
+  \end{titlepage}
+  \cleardoublepage
+}
+
+\fi
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\makeatother
